@@ -71,6 +71,7 @@ export async function POST(request) {
               data: { user },
             } = await supabase.auth.admin.getUserById(product.user_id);
 
+            console.log('user Email:',user?.email);
             if (user?.email) {
               const emailResult = await sendPriceDropAlert(
                 user.email,
