@@ -7,14 +7,16 @@ import AddproductForm from "@/components/AddproductForm";
 import { createClient } from "@/utils/supabase/server";
 import { getProducts } from "./action";
 import ProductCard from "@/components/ProductCard";
+import { ModeToggle } from "@/components/ui/ModeToggle";
 
 export default async function Home() {
+  const supabase = await createClient();
 
-  const supabase=await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  let products =user ? await getProducts():[];
+  let products = user ? await getProducts() : [];
   if (user) {
     const { data } = await supabase
       .from("products")
@@ -45,8 +47,8 @@ export default async function Home() {
   ];
 
   return (
-    <main className="min-h-screen bg-linear-to-br from-orange-50 via-white to-orange-50">
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+    <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <Image
@@ -54,38 +56,50 @@ export default async function Home() {
               alt="DealDrop Logo"
               width={600}
               height={200}
-              className="h-10 w-auto"
+              className="h-10 w-auto dark:invert"
             />
           </div>
 
-          {/* //Auth button */}
-          <AuthButton user={user} />
+          <div className="flex items-center gap-3">
+            <ModeToggle />
+            {/* //Auth button */}
+            <AuthButton user={user} />
+          </div>
         </div>
       </header>
 
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-700 px-6 py-2 rounded-full text-sm font-medium mb-6">Made with 💖 by Ayush Gudigar </div>
-          <h2 className="text-5xl font-bold text-gray-900 mb-4 tracking-tight"> Never Miss a Price Drop</h2>
+          <div className="inline-flex items-center gap-2 bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300 px-6 py-2 rounded-full text-sm font-medium mb-6">
+            Made with 💖 by Ayush Gudigar{" "}
+          </div>
+          <h2 className="text-5xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
+            {" "}
+            Never Miss a Price Drop
+          </h2>
 
-          <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 dark:text-gray-300 mb-12 max-w-2xl mx-auto">
             Track prices from any e-commerce site. Get instant alerts when
             prices drop. Save money effortlessly.
           </p>
 
           {/* Add product form */}
-<AddproductForm user={user} />
+          <AddproductForm user={user} />
 
           {/* Features */}
           {products.length === 0 && (
             <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto mt-16">
               {FEATURES.map(({ icon: Icon, title, description }, index) => (
                 <div key={index} className="">
-                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                    <Icon className="w-6 h-6 text-orange-500" />
+                  <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/50 rounded-lg flex items-center justify-center mb-4 mx-auto">
+                    <Icon className="w-6 h-6 text-orange-500 dark:text-orange-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-                  <p className="text-gray-600">{description}</p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    {title}
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {description}
+                  </p>
                 </div>
               ))}
             </div>
@@ -93,30 +107,40 @@ export default async function Home() {
         </div>
       </section>
 
-      {user && products.length >0 && (
+      {user && products.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 pb-20 ">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-2xl font-bold text-gray-900"> Your Tracked Products </h3>
-            <span className="text-sm text-gray-500">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+              {" "}
+              Your Tracked Products{" "}
+            </h3>
+            <span className="text-sm text-gray-500 dark:text-gray-400">
               {products.length} {products.length === 1 ? "product" : "products"}
             </span>
           </div>
 
           <div className="grid md:grid-cols-2  gap-6 items-start">
-            {products.map((product)=><ProductCard key={product.id} product={product} />)}
-              </div>
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
         </section>
       )}
 
-       {user && products.length === 0 && (
+      {user && products.length === 0 && (
         <section className="max-w-2xl mx-auto px-4 pb-20 text-center ">
-          <div className="bg-white rounded-xl border-xl border-2 border-dashed border-gray-300 p-12">
-            <TrendingDown className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Products Being Tracked</h3>
-            <p className="text-gray-600">Start adding products to track their prices and get notified on price drops.</p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl border-xl border-2 border-dashed border-gray-300 dark:border-gray-600 p-12">
+            <TrendingDown className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              No Products Being Tracked
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              Start adding products to track their prices and get notified on
+              price drops.
+            </p>
           </div>
         </section>
-       )}  
+      )}
     </main>
   );
 }
