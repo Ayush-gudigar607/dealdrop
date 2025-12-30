@@ -7,6 +7,7 @@ export async function POST(request) {
   try {
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
+    console.log(cronSecret, authHeader);
 
     if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -17,6 +18,8 @@ export async function POST(request) {
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
+
+    console.log(supabase);
 
     const { data: products, error: productsError } = await supabase
       .from("products")
@@ -46,18 +49,21 @@ export async function POST(request) {
         const newPrice = parseFloat(productData.currentPrice);
         const oldPrice = parseFloat(product.current_price);
 
-        await supabase
-          .from("products")
-          .update({
-            current_price: newPrice,
-            currency: productData.currencyCode || product.currency,
-            name: productData.productName || product.name,
-            image_url: productData.productImageUrl || product.image_url,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", product.id);
-
+        // CHECK PRICE DIFFERENCE FIRST
         if (oldPrice !== newPrice) {
+          // NOW update the database
+          await supabase
+            .from("products")
+            .update({
+              current_price: newPrice,
+              currency: productData.currencyCode || product.currency,
+              name: productData.productName || product.name,
+              image_url: productData.productImageUrl || product.image_url,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", product.id);
+
+          // Insert into price history
           await supabase.from("price_history").insert({
             product_id: product.id,
             price: newPrice,
@@ -66,6 +72,7 @@ export async function POST(request) {
 
           results.priceChanges++;
 
+          // Send alert if price dropped
           if (newPrice < oldPrice) {
             const {
               data: { user },
@@ -84,9 +91,19 @@ export async function POST(request) {
               }
             }
           }
-        }
 
-        results.updated++;
+          results.updated++;
+        } else {
+          // Price unchanged, but update metadata
+          await supabase
+            .from("products")
+            .update({
+              name: productData.productName || product.name,
+              image_url: productData.productImageUrl || product.image_url,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", product.id);
+        }
       } catch (error) {
         console.error(`Error processing product ${product.id}:`, error);
         results.failed++;
