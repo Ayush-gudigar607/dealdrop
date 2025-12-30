@@ -65,7 +65,7 @@ const PriceChart = ({productId}) => {
             contentStyle={{
               backgroundColor: "white",
               border: "1px solid #e5e7eb",
-              borderRadius: "6px",
+              borderRadius: "7px",
             }}
           />
           <Line
