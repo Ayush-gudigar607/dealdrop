@@ -1,12 +1,28 @@
 import { Button } from "@/components/ui/button";
 import { LogInIcon } from "lucide-react";
 import { TrendingDown, Shield, Bell, Rabbit } from "lucide-react";
+import AuthButton from "@/components/AuthButton";
 import Image from "next/image";
 import AddproductForm from "@/components/AddproductForm";
+import { createClient } from "@/utils/supabase/server";
+import { getProducts } from "./action";
+import ProductCard from "@/components/ProductCard";
 
-export default function Home() {
-  const user = null;
-  const products = [];
+export default async function Home() {
+
+  const supabase=await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  let products =user ? await getProducts():[];
+  if (user) {
+    const { data } = await supabase
+      .from("products")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+    products = data || [];
+  }
 
   const FEATURES = [
     {
@@ -43,14 +59,7 @@ export default function Home() {
           </div>
 
           {/* //Auth button */}
-          <Button
-            variant="default"
-            size="sm"
-            className=" bg-orange-500 hover:bg-orange-600 gap-2"
-          >
-            <LogInIcon className=" w-4 h-4" />
-            Sign In
-          </Button>
+          <AuthButton user={user} />
         </div>
       </header>
 
@@ -83,6 +92,31 @@ export default function Home() {
           )}
         </div>
       </section>
+
+      {user && products.length >0 && (
+        <section className="max-w-7xl mx-auto px-4 pb-20 ">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-2xl font-bold text-gray-900"> Your Tracked Products </h3>
+            <span className="text-sm text-gray-500">
+              {products.length} {products.length === 1 ? "product" : "products"}
+            </span>
+          </div>
+
+          <div className="grid md:grid-cols-2  gap-6 items-start">
+            {products.map((product)=><ProductCard key={product.id} product={product} />)}
+              </div>
+        </section>
+      )}
+
+       {user && products.length === 0 && (
+        <section className="max-w-2xl mx-auto px-4 pb-20 text-center ">
+          <div className="bg-white rounded-xl border-xl border-2 border-dashed border-gray-300 p-12">
+            <TrendingDown className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Products Being Tracked</h3>
+            <p className="text-gray-600">Start adding products to track their prices and get notified on price drops.</p>
+          </div>
+        </section>
+       )}  
     </main>
   );
 }
