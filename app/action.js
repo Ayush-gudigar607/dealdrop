@@ -97,7 +97,11 @@ export async function addProduct(formData) {
     };
   } catch (error) {
     console.error("Error in addProduct action:", error);
-    return { error: "An unexpected error occurred. Please try again." };
+    // Provide more specific error message for debugging
+    return { 
+      error: "An unexpected error occurred. Please try again.",
+      details: error.message // This will help identify the issue
+    };
   }
 }
 
